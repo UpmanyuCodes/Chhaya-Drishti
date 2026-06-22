@@ -88,3 +88,5 @@ The project utilizes data obtained from **Chandrayaan-2**, including:
 ## Goal
 
 To support future lunar exploration by identifying water-ice rich regions and providing safe landing and rover navigation strategies using Chandrayaan-2 data.
+
+Team - Tha Hack Pack 
