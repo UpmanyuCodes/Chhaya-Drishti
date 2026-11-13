@@ -1,0 +1,16 @@
+# downloaded NASA source data and intermediate arrays (re-create with the pipeline)
+data/raw/
+data/processed/
+
+# dependencies / build output
+node_modules/
+web/dist/
+
+# python
+__pycache__/
+*.pyc
+
+# editor / OS
+.vscode/
+.DS_Store
+Thumbs.db
