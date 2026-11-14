@@ -496,7 +496,9 @@ function routeHtml() {
       ${stat(`${p.lengthKm.toFixed(1)} km`, 'drive distance')}
       ${stat(`${p.hours < 48 ? `${p.hours.toFixed(0)} h` : `${(p.hours / 24).toFixed(1)} d`}`, 'driving at 10 cm/s')}
       ${stat(`${p.maxSlope.toFixed(1)}°`, 'steepest cell')}
-      ${stat(`+${nf(p.ascent)} / −${nf(p.descent)} m`, 'climb / descent')}
+      ${stat(p.ascent + p.descent > 9000
+    ? `+${(p.ascent / 1000).toFixed(1)} / −${(p.descent / 1000).toFixed(1)} km`
+    : `+${nf(p.ascent)} / −${nf(p.descent)} m`, 'climb / descent')}
       ${stat(`${p.psrKm.toFixed(1)} km`, 'inside permanent shadow', 'ice')}
       ${stat(`${nf(e.tmax)} K`, `at goal · ice index ${e.ice.toFixed(2)}`, 'ice')}
     </div>`;
@@ -627,6 +629,7 @@ function onTerrainClick(hit) {
       S.profile = pathProfile(pts, terrain);
       renderDock();
       setTool(null);
+      $('#toast').classList.remove('on');
       markers.add({ group: 'pick', cls: 'pick', xz: [a.x, a.z], lift: 0.3, html: '<i>A</i>' });
       markers.add({ group: 'pick', cls: 'pick', xz: [b.x, b.z], lift: 0.3, html: '<i>B</i>' });
     }
@@ -650,7 +653,7 @@ function onPlannerMessage(e) {
     route.clear();
     S.profile = null;
     toast(m.reason === 'goal-steep'
-      ? `The goal is steeper than the ${S.maxSlope}° rover limit`
+      ? `No drivable ground near that goal at a ${S.maxSlope}° limit`
       : `No route within the ${S.maxSlope}° slope limit — raise the limit or move the start`);
   } else {
     const n = data.n, raw = [];
@@ -661,9 +664,11 @@ function onPlannerMessage(e) {
     const end = raw[raw.length - 1];
     markers.add({
       group: 'route', cls: 'goal', xz: end, lift: 0.3,
-      html: `<i>❄</i><span>${S.lastReq.mode === 'ice' ? 'Ice target' : 'Goal'} · ${S.profile.lengthKm.toFixed(1)} km</span>`,
+      html: `<i>${S.lastReq.mode === 'ice' ? '❄' : 'B'}</i><span>${S.lastReq.mode === 'ice' ? 'Ice target' : 'Goal'} · ${S.profile.lengthKm.toFixed(1)} km</span>`,
     });
     if (S.tool) setTool(null);
+    if (m.snapped) toast('Goal moved to the nearest ground the rover can drive on');
+    else $('#toast').classList.remove('on');
   }
   renderRight();
   renderDock();
@@ -844,7 +849,7 @@ function updateHover() {
     rows.push(['Landing', s.landing > 0.02 ? `${Math.round(s.landing * 100)} / 100` : 'excluded']);
   }
   tip.innerHTML = `<b>${fmtLat(s.lat)} · ${fmtLon(s.lon)}</b>${rows.map(([k, v]) => `<div><span>${k}</span><span>${v}</span></div>`).join('')}`;
-  const w = window.innerWidth, flip = pointer.x > w - 250;
+  const w = window.innerWidth, flip = pointer.x > w - (w > 860 ? 560 : 220);
   tip.style.transform = `translate3d(${pointer.x + (flip ? -18 : 18)}px, ${pointer.y + 18}px, 0) translateX(${flip ? '-100%' : '0'})`;
   tip.classList.add('on');
   dirty = true;

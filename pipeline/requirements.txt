@@ -1,0 +1,6 @@
+numpy
+scipy
+numba
+rasterio
+pillow
+matplotlib

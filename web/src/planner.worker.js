@@ -58,9 +58,19 @@ function plan({ mode, start, goal, maxSlope, wDark, iceThresh }) {
   const limit = (maxSlope * 255) / 50;           // slope grid is deg * 255 / 50
   const thr = Math.round(iceThresh * 255);
   const s = start[0] * n + start[1];
-  const gr = goal ? goal[0] : 0, gc = goal ? goal[1] : 0;
+  let gr = goal ? goal[0] : 0, gc = goal ? goal[1] : 0, snapped = false;
+  if (mode === 'p2p' && slope[gr * n + gc] > limit) {
+    // goal sits on ground too steep to drive: use the nearest drivable cell within ~2 km
+    let best = -1, bd = Infinity;
+    for (let dr = -8; dr <= 8; dr++) for (let dc = -8; dc <= 8; dc++) {
+      const r = gr + dr, c = gc + dc, d = dr * dr + dc * dc;
+      if (r < 0 || c < 0 || r >= n || c >= n || d >= bd || slope[r * n + c] > limit) continue;
+      bd = d; best = r * n + c;
+    }
+    if (best < 0) return { found: false, reason: 'goal-steep' };
+    gr = (best / n) | 0; gc = best - gr * n; snapped = true;
+  }
   const goalId = goal ? gr * n + gc : -1;
-  if (mode === 'p2p' && slope[goalId] > limit) return { found: false, reason: 'goal-steep' };
 
   g[s] = 0;
   push(0, s);
@@ -96,7 +106,7 @@ function plan({ mode, start, goal, maxSlope, wDark, iceThresh }) {
   const out = [];
   for (let u = found; u >= 0; u = prev[u]) out.push(u);
   out.reverse();
-  return { found: true, path: Int32Array.from(out), cost: g[found], expanded };
+  return { found: true, path: Int32Array.from(out), cost: g[found], expanded, snapped };
 }
 
 self.onmessage = (e) => {
